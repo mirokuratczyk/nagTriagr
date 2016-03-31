@@ -34,14 +34,17 @@ var base64 = require('base-64');
 var HTTP_HEALTH_URL = '/nagios/cgi-bin/statusjson.cgi?query=servicelist&details=true&dateformat=%25T'
 var Form = t.form.Form;
 
+var Servername = t.refinement(t.String, function (n) {
+  /* stub for check later */
+  return true;
+});
+
 var LoginInfo = t.struct({
-  server: t.String,
+  server: Servername,
   username: t.String,
   password: t.String,
   /*rememberMe: t.Boolean // to implement */
 });
-
-
 
 var options = {
   fields: {
@@ -49,7 +52,8 @@ var options = {
       autoCorrect: false,
       autoCapitalize: "none",
       placeholder: "example.com",
-      label: "Server"
+      label: "Server",
+      error: "Expecting format https://x.y or http://x.y or example.com"
     },
     username: {
       autoCorrect: false,
@@ -109,6 +113,10 @@ class nagTriagr extends Component {
     /*stub*/
   }
 
+  onInputChange(event) {
+    /*stub*/
+  }
+
   render() {
     if(!this.state.loaded) { // check if authed
       return this.renderLoadingView();
@@ -137,6 +145,7 @@ class nagTriagr extends Component {
     this.setState({
         username:"",
         password:"",
+        serverUrl:"",
         statusLoaded:false,
         authSubmitted: false,
     });
@@ -144,7 +153,7 @@ class nagTriagr extends Component {
 
   renderLoadingView() {
     return (
-      <View style={styles.statusContainer}>
+      <View style={styles.loadingContainer}>
         <Text>
           Loading...
         </Text>
@@ -154,18 +163,23 @@ class nagTriagr extends Component {
 
   renderAuthScreen() {
     return (
-      <View style={styles.container}>
-        {/* display */}
-        <Form
-          ref="form"
-          type={LoginInfo}
-          options={options}
-          value={this.props.value}
-          onChange={this.props.onChange}
-        />
-        <TouchableHighlight style={styles.button} onPress={this.onPress.bind(this)} underlayColor='#99d9f4'>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableHighlight>
+      <View style={styles.mainContainer}>
+        <View style={styles.toolbar}>
+          <Text style={styles.toolbarTitle}>nagiosTriagr</Text>
+        </View>
+        <View style={styles.container}>
+          {/* display */}
+          <Form
+            ref="form"
+            type={LoginInfo}
+            options={options}
+            value={this.props.value}
+            onChange={this.props.onChange}
+          />
+          <TouchableHighlight style={styles.button} onPress={this.onPress.bind(this)} underlayColor='#99d9f4'>
+            <Text style={styles.buttonText}>Login</Text>
+          </TouchableHighlight>
+        </View>
       </View>
     );
   }
@@ -196,7 +210,7 @@ class nagTriagr extends Component {
   renderHost(host) {
     //console.log(host);
     return (
-     <View style={styles.container}>
+     <View>
        <Text>
          {host.HTTP.host_name}
        </Text>
@@ -214,14 +228,16 @@ class nagTriagr extends Component {
    );
   }
 
-  onInputChange(event) {
-    /*stub*/
-  }
-
   fetchNagiosData() {
     console.log("Fetching data");
     /* probably should sanitize input here */
-    var url = "https://" + this.state.serverUrl + HTTP_HEALTH_URL;
+    var url = "";
+    if (this.state.serverUrl.match("http://") || this.state.serverUrl.match("https://")) {
+      url = this.state.serverUrl + HTTP_HEALTH_URL;
+    } else {
+      url = "https://" + this.state.serverUrl + HTTP_HEALTH_URL;
+    }
+
     console.log("Attempting connection with " + url);
     fetch(url, {
       method:'GET',
@@ -258,7 +274,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  statusContainer: {
+  loadingContainer: {
     flex: 1,
     flexDirection: 'column',
     justifyContent: 'center',
@@ -277,10 +293,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     textAlign: 'left',
     paddingLeft: 8,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#eeeeee',
   },
   listView: {
     paddingTop: 20,
@@ -307,7 +319,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 50,
     padding: 20,
-    backgroundColor: '#ffffff',
   },
   title: {
     fontSize: 30,
