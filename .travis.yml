@@ -1,0 +1,16 @@
+language: node_js
+notifications:
+  email:
+    miro.kuratczyk@gmail.com
+node_js:
+- 4
+sudo: false
+cache:
+  directories:
+    - node_modules
+install:
+  - npm install
+  - npm install -g react-native-cli
+script:
+- react-native update 
+
