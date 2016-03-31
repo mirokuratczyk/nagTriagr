@@ -16,6 +16,7 @@ import React, {
   NavigatorIOS,
   ActivityIndicatorIOS,
   Component,
+  TouchableHighlight,
   Image,
   ListView,
   StyleSheet,
@@ -27,16 +28,47 @@ import React, {
 var UsernameBar = require('UsernameBar');
 var PasswordBar = require('PasswordBar');
 var ServernameBar = require('ServernameBar');
+var t = require('tcomb-form-native');
 var base64 = require('base-64');
+
 var HTTP_HEALTH_URL = '/nagios/cgi-bin/statusjson.cgi?query=servicelist&details=true&dateformat=%25T'
+var Form = t.form.Form;
+
+var LoginInfo = t.struct({
+  server: t.String,
+  username: t.String,
+  password: t.String,
+  /*rememberMe: t.Boolean // to implement */
+});
+
+
+
+var options = {
+  fields: {
+    server: {
+      autoCorrect: false,
+      autoCapitalize: "none",
+      placeholder: "example.com",
+      label: "Server"
+    },
+    username: {
+      autoCorrect: false,
+      autoCapitalize: "none",
+      placeholder: "username",
+      label: "Username"
+    },
+    password: {
+      password: true,
+      secureTextEntry: true,
+      placeholder: 'password',
+      label: 'Password',
+    },
+  }
+};
 
 class nagTriagr extends Component {
   constructor(props) {
       super(props);
-      this.onUsernameSubmitted = this.onUsernameSubmitted.bind(this);
-      this.onPasswordSubmitted = this.onPasswordSubmitted.bind(this);
-      this.onServernameSubmitted = this.onServernameSubmitted.bind(this);
-      this.renderAuthPage = this.renderAuthPage.bind(this);
       this.renderStatusPage = this.renderStatusPage.bind(this);
       this.fetchNagiosData = this.fetchNagiosData.bind(this);
       this.returnToAuthScreen = this.returnToAuthScreen.bind(this);
@@ -59,13 +91,31 @@ class nagTriagr extends Component {
     this.setState({loaded:true, isLoading:false});
   }
 
+  onPress() {
+    // call getValue() to get the values of the form
+    var value = this.refs.form.getValue();
+    if (value) { // if validation fails, value will be null
+      console.log(value); // value here is an instance of Person
+      this.setState({
+        username: value.username,
+        password: value.password,
+        serverUrl: value.server,
+      });
+      this.login();
+    }
+  }
+
+  onChange(value) {
+    /*stub*/
+  }
+
   render() {
     if(!this.state.loaded) { // check if authed
       return this.renderLoadingView();
     }
 
     if (!this.state.authSubmitted) {
-      return this.renderAuthPage();
+      return this.renderAuthScreen();
     } else if (this.state.authSubmitted && this.state.statusLoaded) {
       return this.renderStatusPage(this.state.nagiosData.localhost);
     } else if (this.state.authSubmitted && this.state.statusLoaded==false) {
@@ -74,6 +124,7 @@ class nagTriagr extends Component {
   }
 
   login() {
+    console.log("Attemping login with " + this.state.username + this.state.password + this.state.serverUrl);
     if (this.state.username && this.state.password && this.state.serverUrl) {
       this.setState({authSubmitted: true});
       this.fetchNagiosData();
@@ -91,45 +142,30 @@ class nagTriagr extends Component {
     });
   }
 
-  renderAuthPage() {
+  renderLoadingView() {
     return (
-      <View style={styles.mainContainer}>
-        <View style={styles.toolbar}>
-          <Text style={styles.toolbarTitle}>nagiosTriagr</Text>
-        </View>
-        <View style={styles.content}>
-        <ServernameBar
-          onInputChange={this.onInputChange}
-          isLoading={this.state.isLoading}
-          onFocus={() =>
-            this.refs.listview && this.refs.listview.getScrollResponder().scrollTo({ x: 0, y: 0 })}
-          onServernameSubmitted={this.onServernameSubmitted}
-        />
-        <UsernameBar
-          onInputChange={this.onInputChange}
-          isLoading={this.state.isLoading}
-          onFocus={() =>
-            this.refs.listview && this.refs.listview.getScrollResponder().scrollTo({ x: 0, y: 0 })}
-          onUsernameSubmitted={this.onUsernameSubmitted} /* need to handle no return pressed */
-        />
-        <PasswordBar
-          onInputChange={this.onInputChange}
-          isLoading={this.state.isLoading}
-          onFocus={() =>
-            this.refs.listview && this.refs.listview.getScrollResponder().scrollTo({ x: 0, y: 0 })}
-          onPasswordSubmitted={this.onPasswordSubmitted}
-        />
-        </View>
+      <View style={styles.statusContainer}>
+        <Text>
+          Loading...
+        </Text>
       </View>
     );
   }
 
-  renderLoadingView() {
+  renderAuthScreen() {
     return (
       <View style={styles.container}>
-        <Text>
-          Loading...
-        </Text>
+        {/* display */}
+        <Form
+          ref="form"
+          type={LoginInfo}
+          options={options}
+          value={this.props.value}
+          onChange={this.props.onChange}
+        />
+        <TouchableHighlight style={styles.button} onPress={this.onPress.bind(this)} underlayColor='#99d9f4'>
+          <Text style={styles.buttonText}>Login</Text>
+        </TouchableHighlight>
       </View>
     );
   }
@@ -182,26 +218,8 @@ class nagTriagr extends Component {
     /*stub*/
   }
 
-  onServernameSubmitted(event) {
-    var srvr = event.nativeEvent.text;
-    console.log("Servername submitted: " + srvr);
-    this.setState({serverUrl: srvr});
-  }
-
-  onUsernameSubmitted(event) {
-    var usr = event.nativeEvent.text;
-    console.log("Username submitted: " + usr);
-    this.setState({username: usr});
-  }
-
-  onPasswordSubmitted(event) {
-    var pwd = event.nativeEvent.text;
-    console.log("Password submitted: " + pwd);
-    this.setState({password: pwd});
-    this.login();
-  }
-
   fetchNagiosData() {
+    console.log("Fetching data");
     /* probably should sanitize input here */
     var url = "https://" + this.state.serverUrl + HTTP_HEALTH_URL;
     console.log("Attempting connection with " + url);
@@ -240,7 +258,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
-  container: {
+  statusContainer: {
     flex: 1,
     flexDirection: 'column',
     justifyContent: 'center',
@@ -284,6 +302,32 @@ const styles = StyleSheet.create({
     textAlign:'center',
     fontWeight:'bold',
     flex:1
+  },
+  container: {
+    justifyContent: 'center',
+    marginTop: 50,
+    padding: 20,
+    backgroundColor: '#ffffff',
+  },
+  title: {
+    fontSize: 30,
+    alignSelf: 'center',
+    marginBottom: 30
+  },
+  buttonText: {
+    fontSize: 18,
+    color: 'white',
+    alignSelf: 'center'
+  },
+  button: {
+    height: 36,
+    backgroundColor: '#48BBEC',
+    borderColor: '#48BBEC',
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 10,
+    alignSelf: 'stretch',
+    justifyContent: 'center'
   }
 });
 
