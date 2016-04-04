@@ -1,4 +1,5 @@
-language: node_js
+osx_image: xcode7.2
+language: objective-c
 notifications:
   email:
     miro.kuratczyk@gmail.com
@@ -8,6 +9,9 @@ sudo: false
 cache:
   directories:
     - node_modules
+before_install:
+  - brew update
+  - brew install xctool
 install:
   - npm install
   - npm install -g react-native-cli
@@ -15,5 +19,5 @@ install:
   - npm install base-64
   - react-native upgrade
 script:
-- react-native run-ios
+  - react-native run-ios
 
