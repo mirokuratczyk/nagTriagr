@@ -1,6 +1,6 @@
 # nagTriagr
 ----------
-![License](https://img.shields.io/badge/License-MIT-yellowgreen.svg)
+[![Build Status](https://travis-ci.org/mirokuratczyk/nagTriagr.png)] ![License](https://img.shields.io/badge/License-MIT-yellowgreen.svg)
 ----------
 iOS app for checking server health through nagios4
 
@@ -19,7 +19,7 @@ $ npm-start --reset-cache
 
 Now you can open the Xcode project in ./ios.
 
-To run on the simulator make sure the following line is uncommented in `AppDelegate.m`
+To run on the simulator, make sure the following line is uncommented in `AppDelegate.m`
 ```
 jsCodeLocation = [NSURL URLWithString:@"http://localhost:8081/index.ios.bundle?platform=ios&dev=true"];
 ```

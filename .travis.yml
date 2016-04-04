@@ -13,6 +13,7 @@ install:
   - npm install -g react-native-cli
   - npm install tcomb-form-native
   - npm install base-64
+  - react-native upgrade
 script:
-- react-native upgrade
+- react-native run-ios
 
