@@ -79,7 +79,8 @@ class nagTriagr extends Component {
       this.login = this.login.bind(this);
 
       this.state = {
-        nagiosListData: new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2}),
+        nagiosListData: new ListView.DataSource({rowHasChanged: (r1, r2) => r1 !== r2,
+        sectionHeaderHasChanged : (s1, s2) => s1 !== s2}),
         nagiosData: {},
         loaded: false,
         isLoading: true,
@@ -165,7 +166,7 @@ class nagTriagr extends Component {
     return (
       <View style={styles.mainContainer}>
         <View style={styles.toolbar}>
-          <Text style={styles.toolbarTitle}>nagiosTriagr</Text>
+          <Text style={styles.toolbarTitle}>nagTriagr</Text>
         </View>
         <View style={styles.container}>
           {/* display */}
@@ -185,7 +186,6 @@ class nagTriagr extends Component {
   }
 
   renderStatusPage(host) {
-    console.log(this.state.nagiosData.result);
     return (
       <View style={styles.mainContainer}>
         <View style={styles.toolbar}>
@@ -196,6 +196,7 @@ class nagTriagr extends Component {
         <View style={styles.content}>
           <ListView
             dataSource={this.state.nagiosListData}
+            renderSectionHeader={this.renderHostName}
             renderRow={this.renderHost}
             style={styles.listView}
           />
@@ -207,25 +208,18 @@ class nagTriagr extends Component {
     );
   }
 
-  renderHost(host) {
-    //console.log(host);
+  renderHostName(host,hostname) {
     return (
-     <View>
-       <Text>
-         {host.HTTP.host_name}
-       </Text>
-       <View style={styles.rightContainer}>
-         <Text style={styles.pluginOutput}>{host["Current Load"].plugin_output}</Text>
-         <Text style={styles.pluginOutput}>{host["Current Users"].plugin_output}</Text>
-         <Text style={styles.pluginOutput}>{host["Root Partition"].plugin_output}</Text>
-         <Text style={styles.pluginOutput}>{host.HTTP.plugin_output}</Text>
-         <Text style={styles.pluginOutput}>{host.PING.plugin_output}</Text>
-         <Text style={styles.pluginOutput}>{host.SSH.plugin_output}</Text>
-         <Text style={styles.pluginOutput}>{host["Swap Usage"].plugin_output}</Text>
-         <Text style={styles.pluginOutput}>{host["Total Processes"].plugin_output}</Text>
-       </View>
-     </View>
-   );
+      <Text>{hostname}</Text>
+    );
+  }
+
+  renderHost(host) {
+    return (
+      <View style={styles.rightContainer}>
+        <Text style={styles.pluginOutput}>{host.plugin_output}</Text>
+      </View>
+    );
   }
 
   fetchNagiosData() {
@@ -247,9 +241,9 @@ class nagTriagr extends Component {
     })
       .then((response) => response.json()) //.text
       .then((responseData)=> {
-        //console.log(responseData.data.service);
+        console.log(responseData.data.servicelist);
         this.setState({
-            nagiosListData: this.state.nagiosListData.cloneWithRows(responseData.data.servicelist),
+            nagiosListData: this.state.nagiosListData.cloneWithRowsAndSections(responseData.data.servicelist),
             nagiosData: responseData,
             statusLoaded:true,
         });
