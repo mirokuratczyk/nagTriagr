@@ -11,6 +11,8 @@ cache:
 install:
   - npm install
   - npm install -g react-native-cli
+  - npm install tcomb-form-native
+  - npm install base-64
 script:
-- react-native update 
+- react-native upgrade
 
