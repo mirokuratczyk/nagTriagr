@@ -22,7 +22,8 @@ import React, {
   StyleSheet,
   Text,
   TextInput,
-  View
+  View,
+  AlertIOS
 } from 'react-native';
 
 var UsernameBar = require('UsernameBar');
@@ -30,9 +31,13 @@ var PasswordBar = require('PasswordBar');
 var ServernameBar = require('ServernameBar');
 var t = require('tcomb-form-native');
 var base64 = require('base-64');
+var Accordion = require('react-native-accordion');
 
 var HTTP_HEALTH_URL = '/nagios/cgi-bin/statusjson.cgi?query=servicelist&details=true&dateformat=%25T'
 var Form = t.form.Form;
+const SERVICE_CRITICAL = 16;
+const SERVICE_UNKNOWN = 8;
+const SERVICE_OK = 2;
 
 var Servername = t.refinement(t.String, function (n) {
   /* stub for check later */
@@ -196,29 +201,65 @@ class nagTriagr extends Component {
         <View style={styles.content}>
           <ListView
             dataSource={this.state.nagiosListData}
-            renderSectionHeader={this.renderHostName}
+            renderSectionHeader={this.renderHostName.bind(this)}
             renderRow={this.renderHost}
             style={styles.listView}
           />
-        <Text>
-          Last snapshot at {this.state.nagiosData.result.query_time}
-        </Text>
+          <Text>
+            Last snapshot at {this.state.nagiosData.result.query_time}
+          </Text>
         </View>
       </View>
     );
   }
 
   renderHostName(host,hostname) {
+    if (hostname == "localhost") {
+      hostname = this.state.serverUrl;
+    }
     return (
-      <Text>{hostname}</Text>
+      <Text style={styles.hostName}>{hostname}</Text>
     );
   }
 
+  iPress() {
+    console.log("PRESSED");
+  }
+
   renderHost(host) {
-    return (
-      <View style={styles.rightContainer}>
+    var rows = [];
+    var status = "OK";
+    var styleSheet = styles.pluginOutputOK;
+
+    if (host.status == SERVICE_CRITICAL) {
+      console.warn(host.host_name + ": " + host.description + " is critical.")
+      status = "CRITICAL";
+      styleSheet = styles.pluginOutputCRITICAL;
+    } else if (host.status == SERVICE_UNKNOWN) {
+      console.warn(host.host_name + ": " + host.description + " is unknown.")
+      status = "UNKNOWN";
+    }
+
+    rows.push(<Text key={host.description} style={styleSheet}>{host.description}</Text>);
+    rows.push(<Text key={host.status} style={styleSheet}>{status}</Text>);
+    var content = (
+      <View>
         <Text style={styles.pluginOutput}>{host.plugin_output}</Text>
       </View>
+    );
+
+    var header = (
+      <View style={styles.rightContainer}>
+        {rows}
+      </View>
+    );
+
+    return (
+      <Accordion
+        header={header}
+        content={content}
+        easing="easeOutCubic"
+      />
     );
   }
 
@@ -265,7 +306,7 @@ const styles = StyleSheet.create({
   },
   content:{
     backgroundColor: '#F5FCFF',
-    alignItems: 'center',
+    alignItems: 'stretch',
     flex: 1,
   },
   loadingContainer: {
@@ -277,19 +318,10 @@ const styles = StyleSheet.create({
   },
   rightContainer: {
     flex: 1,
-  },
-  thumbnail: {
-    width: 53,
-    height: 81,
-  },
-  pluginOutput: {
-    fontSize: 8,
-    marginBottom: 8,
-    textAlign: 'left',
-    paddingLeft: 8,
+    flexDirection: 'row',
+    backgroundColor: '#e6f7ff',
   },
   listView: {
-    paddingTop: 20,
     backgroundColor: '#F5FCFF',
   },
   toolbar:{
@@ -314,10 +346,46 @@ const styles = StyleSheet.create({
     marginTop: 50,
     padding: 20,
   },
-  title: {
-    fontSize: 30,
-    alignSelf: 'center',
-    marginBottom: 30
+  pluginOutput: {
+    textAlign: 'left',
+    backgroundColor: '#ccffff',
+    fontSize: 14,
+    flex: 1,
+    paddingLeft: 8,
+  },
+  pluginOutputOK: {
+    fontSize: 8,
+    borderColor: 'black',
+    borderWidth: 0.5,
+    textAlign: 'left',
+    backgroundColor: '#00e600',
+    fontSize: 14,
+    flex: 1,
+    paddingLeft: 8,
+  },
+  pluginOutputCRITICAL: {
+    fontSize: 8,
+    borderColor: 'black',
+    borderWidth: 0.5,
+    textAlign: 'left',
+    backgroundColor: '#ff9933',
+    fontSize: 14,
+    flex: 1,
+    paddingLeft: 8,
+  },
+  hostName: {
+    height: 36,
+    borderColor: 'black',
+    borderWidth: 0.5,
+    paddingTop: 8,
+    backgroundColor: '#48BBEC',
+    fontSize: 18,
+    color: 'white',
+    textAlign: 'center',
+    textDecorationStyle: 'solid',
+    letterSpacing: 2,
+    textShadowColor: 'black',
+    flex:1,
   },
   buttonText: {
     fontSize: 18,
