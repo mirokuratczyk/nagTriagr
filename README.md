@@ -14,7 +14,7 @@ $ npm install
 $ react-native upgrade
 $ npm install tcomb-form-native
 $ npm install base-64
-$ npm-start --reset-cache
+$ npm start --reset-cache
 ```
 
 Now you can open the Xcode project in ./ios.
